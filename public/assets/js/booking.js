@@ -114,11 +114,23 @@
         toDetails.disabled = true;
     };
 
+    const showSlotState = (html, loading = false) => {
+        slotState.hidden = false;
+        slotState.style.display = 'flex';
+        slotState.classList.toggle('is-loading', loading);
+        slotState.innerHTML = html;
+    };
+
+    const hideSlotState = () => {
+        slotState.classList.remove('is-loading');
+        slotState.hidden = true;
+        slotState.style.display = 'none';
+        slotState.innerHTML = '';
+    };
+
     const fetchSlots = async () => {
         timeGrid.innerHTML = '';
-        slotState.hidden = false;
-        slotState.classList.add('is-loading');
-        slotState.innerHTML = '<span class="loader"></span><span>Beschikbaarheid ophalen…</span>';
+        showSlotState('<span class="loader"></span><span>Even kijken wat nog vrij is…</span>', true);
         const url = `${api}?action=availability&date=${encodeURIComponent(dateInput.value)}&party_size=${encodeURIComponent(partyInput.value)}`;
 
         try {
@@ -126,7 +138,7 @@
             const data = await response.json();
             if (!response.ok || !data.ok) throw new Error(data.message || 'Beschikbaarheid kon niet worden geladen.');
 
-            slotState.hidden = true;
+            hideSlotState();
             const party = Number(partyInput.value);
             slotSummary.textContent = `${formatDate(dateInput.value)} · ${party} ${party === 1 ? 'persoon' : 'personen'}`;
 
@@ -151,9 +163,7 @@
                 timeGrid.appendChild(button);
             });
         } catch (error) {
-            slotState.hidden = false;
-            slotState.classList.remove('is-loading');
-            slotState.innerHTML = `<span>${error.message}</span>`;
+            showSlotState(`<span>${error.message}</span>`);
         }
     };
 
