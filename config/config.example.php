@@ -30,5 +30,15 @@ return [
         'trust_proxy' => false,
         'public_rate_limit' => 12,
         'public_rate_window_minutes' => 15,
+        'form_min_seconds' => 3,
+        'form_max_seconds' => 7200,
+        'recaptcha' => [
+            'enabled' => false,
+            'site_key' => '',
+            'secret_key' => '',
+            'min_score' => 0.5,
+            'action' => 'reservation',
+            'expected_hostname' => '', // e.g. reserveer.de-pasto.be
+        ],
     ],
 ];
