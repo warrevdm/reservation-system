@@ -34,11 +34,12 @@ return [
         'form_max_seconds' => 7200,
         'recaptcha' => [
             'enabled' => false,
+            'mode' => 'v2', // v2 = zichtbare "Ik ben geen robot" checkbox; v3 = onzichtbare score
             'site_key' => '',
             'secret_key' => '',
-            'min_score' => 0.5,
-            'action' => 'reservation',
-            'expected_hostname' => '', // e.g. reserveer.de-pasto.be
+            'min_score' => 0.5, // alleen voor v3
+            'action' => 'reservation', // alleen voor v3
+            'expected_hostname' => '', // productie: reserveer.de-pasto.be; lokaal leeg laten
         ],
     ],
 ];
