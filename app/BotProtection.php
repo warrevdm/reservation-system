@@ -53,6 +53,12 @@ final class BotProtection
         return $age >= $minimumAge && $age <= $maximumAge;
     }
 
+    public static function recaptchaMode(): string
+    {
+        $mode = strtolower(trim((string) config('security.recaptcha.mode', 'v2')));
+        return in_array($mode, ['v2', 'v3'], true) ? $mode : 'v2';
+    }
+
     public static function recaptchaEnabled(): bool
     {
         return (bool) config('security.recaptcha.enabled', false)
@@ -84,12 +90,12 @@ final class BotProtection
 
         $result = json_decode($raw, true);
         if (!is_array($result) || empty($result['success'])) {
-            return ['ok' => false, 'score' => $result['score'] ?? null, 'reason' => 'verification-failed'];
-        }
-
-        $expectedAction = (string) config('security.recaptcha.action', 'reservation');
-        if (($result['action'] ?? '') !== $expectedAction) {
-            return ['ok' => false, 'score' => $result['score'] ?? null, 'reason' => 'wrong-action'];
+            return [
+                'ok' => false,
+                'score' => $result['score'] ?? null,
+                'reason' => 'verification-failed',
+                'errors' => $result['error-codes'] ?? [],
+            ];
         }
 
         $expectedHostname = trim((string) config('security.recaptcha.expected_hostname', ''));
@@ -97,13 +103,22 @@ final class BotProtection
             return ['ok' => false, 'score' => $result['score'] ?? null, 'reason' => 'wrong-hostname'];
         }
 
-        $score = (float) ($result['score'] ?? 0.0);
-        $minimumScore = max(0.0, min(1.0, (float) config('security.recaptcha.min_score', 0.5)));
-        if ($score < $minimumScore) {
-            return ['ok' => false, 'score' => $score, 'reason' => 'low-score'];
+        if (self::recaptchaMode() === 'v3') {
+            $expectedAction = (string) config('security.recaptcha.action', 'reservation');
+            if (($result['action'] ?? '') !== $expectedAction) {
+                return ['ok' => false, 'score' => $result['score'] ?? null, 'reason' => 'wrong-action'];
+            }
+
+            $score = (float) ($result['score'] ?? 0.0);
+            $minimumScore = max(0.0, min(1.0, (float) config('security.recaptcha.min_score', 0.5)));
+            if ($score < $minimumScore) {
+                return ['ok' => false, 'score' => $score, 'reason' => 'low-score'];
+            }
+
+            return ['ok' => true, 'score' => $score, 'reason' => 'ok'];
         }
 
-        return ['ok' => true, 'score' => $score, 'reason' => 'ok'];
+        return ['ok' => true, 'score' => null, 'reason' => 'ok'];
     }
 
     private static function post(string $url, string $payload): ?string
