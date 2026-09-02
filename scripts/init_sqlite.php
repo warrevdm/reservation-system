@@ -28,7 +28,21 @@ return [
         'options' => [],
     ],
     'mail' => ['enabled' => false, 'from_email' => 'reservaties@de-pasto.be', 'from_name' => 'De Pasto', 'notify_email' => 'reservaties@de-pasto.be'],
-    'security' => ['trust_proxy' => false, 'public_rate_limit' => 12, 'public_rate_window_minutes' => 15],
+    'security' => [
+        'trust_proxy' => false,
+        'public_rate_limit' => 12,
+        'public_rate_window_minutes' => 15,
+        'form_min_seconds' => 3,
+        'form_max_seconds' => 7200,
+        'recaptcha' => [
+            'enabled' => false,
+            'site_key' => '',
+            'secret_key' => '',
+            'min_score' => 0.5,
+            'action' => 'reservation',
+            'expected_hostname' => '',
+        ],
+    ],
 ];
 PHP_CONFIG;
     file_put_contents($configPath, $config . PHP_EOL);
