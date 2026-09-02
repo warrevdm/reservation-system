@@ -5,6 +5,10 @@ require_once dirname(__DIR__) . '/app/bootstrap.php';
 
 $daysAhead = max(1, (int) setting('bookable_days_ahead', 90));
 $maxParty = max(1, (int) setting('max_online_party_size', 12));
+$formToken = BotProtection::issueFormToken();
+$recaptchaEnabled = BotProtection::recaptchaEnabled();
+$recaptchaSiteKey = (string) config('security.recaptcha.site_key', '');
+$recaptchaAction = (string) config('security.recaptcha.action', 'reservation');
 ?>
 <!doctype html>
 <html lang="nl">
@@ -79,7 +83,7 @@ $maxParty = max(1, (int) setting('max_online_party_size', 12));
 
                     <div id="slotState" class="slot-state is-loading" hidden>
                         <span class="loader"></span>
-                        <span>Beschikbaarheid ophalen…</span>
+                        <span>Even kijken wat nog vrij is…</span>
                     </div>
                     <div id="timeSlots" class="time-grid"></div>
                     <input type="hidden" id="reservationTime" name="time" required>
@@ -116,7 +120,10 @@ $maxParty = max(1, (int) setting('max_online_party_size', 12));
                         </div>
                     </div>
 
+                    <input type="hidden" name="form_token" value="<?= e($formToken) ?>">
                     <input class="honeypot" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+                    <input class="honeypot" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+
                     <label class="consent-row">
                         <input type="checkbox" id="privacyConsent" required>
                         <span>Ik ga ermee akkoord dat De Pasto mijn gegevens gebruikt om deze reservatie te verwerken.</span>
@@ -146,7 +153,17 @@ $maxParty = max(1, (int) setting('max_online_party_size', 12));
         </section>
     </main>
 
-    <script>window.PASTO_API = <?= json_encode(base_url('/api.php'), JSON_UNESCAPED_SLASHES) ?>;</script>
+    <script>
+        window.PASTO_API = <?= json_encode(base_url('/api.php'), JSON_UNESCAPED_SLASHES) ?>;
+        window.PASTO_RECAPTCHA = <?= json_encode([
+            'enabled' => $recaptchaEnabled,
+            'siteKey' => $recaptchaSiteKey,
+            'action' => $recaptchaAction,
+        ], JSON_UNESCAPED_SLASHES) ?>;
+    </script>
+    <?php if ($recaptchaEnabled): ?>
+        <script src="https://www.google.com/recaptcha/api.js?render=<?= e(rawurlencode($recaptchaSiteKey)) ?>" defer></script>
+    <?php endif; ?>
     <script src="<?= e(base_url('/assets/js/booking.js')) ?>" defer></script>
 </body>
 </html>
