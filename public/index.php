@@ -7,6 +7,7 @@ $daysAhead = max(1, (int) setting('bookable_days_ahead', 90));
 $maxParty = max(1, (int) setting('max_online_party_size', 12));
 $formToken = BotProtection::issueFormToken();
 $recaptchaEnabled = BotProtection::recaptchaEnabled();
+$recaptchaMode = BotProtection::recaptchaMode();
 $recaptchaSiteKey = (string) config('security.recaptcha.site_key', '');
 $recaptchaAction = (string) config('security.recaptcha.action', 'reservation');
 ?>
@@ -124,6 +125,13 @@ $recaptchaAction = (string) config('security.recaptcha.action', 'reservation');
                     <input class="honeypot" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
                     <input class="honeypot" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
 
+                    <?php if ($recaptchaEnabled && $recaptchaMode === 'v2'): ?>
+                        <div class="captcha-wrap">
+                            <div class="captcha-label">Beveiligingscontrole</div>
+                            <div class="g-recaptcha" data-sitekey="<?= e($recaptchaSiteKey) ?>" data-theme="light"></div>
+                        </div>
+                    <?php endif; ?>
+
                     <label class="consent-row">
                         <input type="checkbox" id="privacyConsent" required>
                         <span>Ik ga ermee akkoord dat De Pasto mijn gegevens gebruikt om deze reservatie te verwerken.</span>
@@ -157,11 +165,14 @@ $recaptchaAction = (string) config('security.recaptcha.action', 'reservation');
         window.PASTO_API = <?= json_encode(base_url('/api.php'), JSON_UNESCAPED_SLASHES) ?>;
         window.PASTO_RECAPTCHA = <?= json_encode([
             'enabled' => $recaptchaEnabled,
+            'mode' => $recaptchaMode,
             'siteKey' => $recaptchaSiteKey,
             'action' => $recaptchaAction,
         ], JSON_UNESCAPED_SLASHES) ?>;
     </script>
-    <?php if ($recaptchaEnabled): ?>
+    <?php if ($recaptchaEnabled && $recaptchaMode === 'v2'): ?>
+        <script src="https://www.google.com/recaptcha/api.js?hl=nl" async defer></script>
+    <?php elseif ($recaptchaEnabled): ?>
         <script src="https://www.google.com/recaptcha/api.js?render=<?= e(rawurlencode($recaptchaSiteKey)) ?>" defer></script>
     <?php endif; ?>
     <script src="<?= e(base_url('/assets/js/booking.js')) ?>" defer></script>
