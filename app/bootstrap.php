@@ -27,6 +27,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
 require_once $root . '/app/Database.php';
 require_once $root . '/app/helpers.php';
+require_once $root . '/app/BotProtection.php';
 require_once $root . '/app/Auth.php';
 require_once $root . '/app/ReservationService.php';
 require_once $root . '/app/Mailer.php';
