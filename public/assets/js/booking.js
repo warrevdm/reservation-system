@@ -3,7 +3,7 @@
     if (!form) return;
 
     const api = window.PASTO_API || '/api.php';
-    const recaptcha = window.PASTO_RECAPTCHA || { enabled: false };
+    const recaptcha = window.PASTO_RECAPTCHA || { enabled: false, mode: 'v2' };
     const dateInput = document.getElementById('reservationDate');
     const partyInput = document.getElementById('partySize');
     const timeInput = document.getElementById('reservationTime');
@@ -174,6 +174,14 @@
             throw new Error('De beveiligingscontrole kon niet worden geladen. Vernieuw de pagina en probeer opnieuw.');
         }
 
+        if ((recaptcha.mode || 'v2') === 'v2') {
+            const response = window.grecaptcha.getResponse();
+            if (!response) {
+                throw new Error('Vink eerst “Ik ben geen robot” aan.');
+            }
+            return response;
+        }
+
         return await new Promise((resolve, reject) => {
             window.grecaptcha.ready(() => {
                 window.grecaptcha.execute(recaptcha.siteKey, { action: recaptcha.action || 'reservation' })
@@ -181,6 +189,12 @@
                     .catch(() => reject(new Error('De beveiligingscontrole kon niet worden uitgevoerd. Probeer opnieuw.')));
             });
         });
+    };
+
+    const resetRecaptcha = () => {
+        if (recaptcha.enabled && (recaptcha.mode || 'v2') === 'v2' && window.grecaptcha) {
+            try { window.grecaptcha.reset(); } catch (_) {}
+        }
     };
 
     const validateStepOne = () => {
@@ -248,6 +262,7 @@
             document.getElementById('successCode').textContent = result.reservation.public_code || '—';
             document.getElementById('successSummary').textContent = `${formatDate(payload.date)} · ${payload.time} · ${payload.party_size} ${payload.party_size === 1 ? 'persoon' : 'personen'}`;
         } catch (error) {
+            resetRecaptcha();
             formError.textContent = error.message;
             formError.hidden = false;
         } finally {
