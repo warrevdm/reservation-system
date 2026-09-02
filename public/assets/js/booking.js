@@ -3,6 +3,7 @@
     if (!form) return;
 
     const api = window.PASTO_API || '/api.php';
+    const recaptcha = window.PASTO_RECAPTCHA || { enabled: false };
     const dateInput = document.getElementById('reservationDate');
     const partyInput = document.getElementById('partySize');
     const timeInput = document.getElementById('reservationTime');
@@ -167,6 +168,21 @@
         }
     };
 
+    const getRecaptchaToken = async () => {
+        if (!recaptcha.enabled) return null;
+        if (!window.grecaptcha || !recaptcha.siteKey) {
+            throw new Error('De beveiligingscontrole kon niet worden geladen. Vernieuw de pagina en probeer opnieuw.');
+        }
+
+        return await new Promise((resolve, reject) => {
+            window.grecaptcha.ready(() => {
+                window.grecaptcha.execute(recaptcha.siteKey, { action: recaptcha.action || 'reservation' })
+                    .then(resolve)
+                    .catch(() => reject(new Error('De beveiligingscontrole kon niet worden uitgevoerd. Probeer opnieuw.')));
+            });
+        });
+    };
+
     const validateStepOne = () => {
         if (!dateInput.value || !partyInput.value) return false;
         const date = new Date(`${dateInput.value}T12:00:00`);
@@ -205,7 +221,7 @@
 
         submitButton.disabled = true;
         const originalText = submitButton.textContent;
-        submitButton.textContent = 'Reservatie versturen…';
+        submitButton.textContent = recaptcha.enabled ? 'Beveiliging controleren…' : 'Reservatie versturen…';
 
         const data = new FormData(form);
         const payload = Object.fromEntries(data.entries());
@@ -213,6 +229,11 @@
         payload.party_size = Number(payload.party_size);
 
         try {
+            if (recaptcha.enabled) {
+                payload.recaptcha_token = await getRecaptchaToken();
+                submitButton.textContent = 'Reservatie versturen…';
+            }
+
             const response = await fetch(`${api}?action=reserve`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -236,15 +257,7 @@
     });
 
     document.getElementById('newBooking').addEventListener('click', () => {
-        form.reset();
-        partyInput.value = '2';
-        timeInput.value = '';
-        success.hidden = true;
-        form.hidden = false;
-        document.querySelector('.booking-progress').hidden = false;
-        renderDates();
-        renderParty();
-        setStep(1);
+        window.location.reload();
     });
 
     renderDates();
